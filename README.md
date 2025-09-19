@@ -14,7 +14,7 @@ You can view the live application here: **[http://107.20.29.29:3000](http://107.
 
 
 
-![Live Application Screenshot]https://github.com/Divyansh-77/Hosting-Node.js-App-on-AWS-EC2/blob/55ca5c6207cf4fcd5202c44714e2d473b806f918/Screenshot%20from%202025-09-19%2010-11-59.png
+![Live Application Screenshot]https://github.com/Divyansh-77/Hosting-Node.js-App-on-AWS-EC2/blob/3a5816ba8cd242885800128c8454591c32fb9cdb/Screenshot%20from%202025-09-19%2011-04-38.png
 
 
 
