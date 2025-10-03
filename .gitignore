@@ -1,0 +1,12 @@
+# Terraform local files
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+
+# Ansible files
+inventory
+secrets.yml
+
+# Secret files
+*.pem
