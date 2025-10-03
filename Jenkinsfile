@@ -7,14 +7,12 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
     }
 
-    stages {
-        stage('Checkout Code') {
-            steps {
-                // This step clones your project code from GitHub
-                echo 'Checking out code from GitHub...'
-                git 'https://github.com/Divyansh-77/Hosting-Node.js-App-on-AWS-EC2.git'
-            }
-        }
+    stage('Checkout Code') {
+    steps {
+        echo 'Checking out code from GitHub...'
+        git branch: 'main', url: 'https://github.com/Divyansh-77/Hosting-Node.js-App-on-AWS-EC2.git'
+    }
+}
 
         stage('Terraform Apply') {
             steps {
