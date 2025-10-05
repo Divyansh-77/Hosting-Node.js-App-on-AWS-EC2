@@ -1,0 +1,16 @@
+pipeline {
+    // Ek Node.js wale Docker container ko hum apna temporary build environment banayenge
+    agent {
+        docker { image 'node:16-alpine' }
+    }
+
+    stages {
+        stage('Verify Node.js Version') {
+            steps {
+                echo 'Yeh command ek temporary Node.js Docker container ke andar chal raha hai!'
+                sh 'node --version'
+                sh 'npm --version'
+            }
+        }
+    }
+}
