@@ -21,7 +21,11 @@ pipeline {
         stage('Terraform Apply') {
             // Use a specific Docker container that has Terraform pre-installed.
             agent {
-                docker { image 'hashicorp/terraform:latest' }
+                docker {
+                    image 'hashicorp/terraform:latest'
+                    // Override entrypoint to keep the container running for subsequent commands.
+                    args '-u root --entrypoint=""'
+                }
             }
             steps {
                 echo 'Running Terraform inside a Docker container...'
