@@ -1,0 +1,15 @@
+pipeline {
+    // Iss baar hum Python wala Docker container use karenge
+    agent {
+        docker { image 'python:3.9-slim' }
+    }
+
+    stages {
+        stage('Verify Python Version') {
+            steps {
+                echo 'Yeh command ek temporary Python Docker container ke andar chal raha hai!'
+                sh 'python3 --version'
+            }
+        }
+    }
+}
