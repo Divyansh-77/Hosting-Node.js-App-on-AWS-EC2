@@ -5,13 +5,13 @@
     - secrets.yml
   tasks:
     - name: Update apt cache and install required packages
-      apt:
-        name:
-          - nodejs
-          - git
-        state: present
-        update_cache: yes
-
+  apt:
+    name:
+      - nodejs
+      - npm   # <-- Add this line back
+      - git
+    state: present
+    update_cache: yes
     - name: Clone the application repository from GitHub
       git:
         repo: 'https://github.com/verma-kunal/AWS-Session.git'
