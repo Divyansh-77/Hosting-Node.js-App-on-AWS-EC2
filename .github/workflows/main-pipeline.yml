@@ -23,7 +23,6 @@ jobs:
         uses: hashicorp/setup-terraform@v2
 
       - name: Terraform Apply
-        id: tf_apply
         run: |
           terraform init
           terraform apply -auto-approve
@@ -32,15 +31,15 @@ jobs:
         env:
           ANSIBLE_HOST_KEY_CHECKING: false
         run: |
-          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ansible-key.pem
-          chmod 400 ansible-key.pem
-
-          echo "stripe_publishable_key: ${{ secrets.STRIPE_PK }}" > secrets.yml
-          echo "stripe_secret_key: ${{ secrets.STRIPE_SK }}" >> secrets.yml
-
+          echo "--- DEBUGGING: Trying to get Terraform output ---"
           APP_SERVER_IP=$(terraform output -raw public_ip)
+          echo "--- DEBUGGING: The IP address found is: '$APP_SERVER_IP' ---"
 
           echo "[webserver]" > inventory_github
           echo "$APP_SERVER_IP ansible_user=ubuntu ansible_ssh_private_key_file=./ansible-key.pem" >> inventory_github
+
+          echo "--- DEBUGGING: Contents of the generated inventory file ---"
+          cat inventory_github
+          echo "--- END DEBUGGING ---"
 
           ansible-playbook -i inventory_github playbook.yml
