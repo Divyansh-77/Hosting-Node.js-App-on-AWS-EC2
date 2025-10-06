@@ -1,18 +1,16 @@
 - name: Deploy Stripe Node.js App
   hosts: webserver
-  become: yes # Use 'sudo' for commands
-
-  # Load secret variables from the untracked secrets.yml file for security
+  become: yes
   vars_files:
     - secrets.yml
-
-- name: Update apt cache and install required packages
-  apt:
-    name:
-      - nodejs  # This will automatically install npm
-      - git
-    state: present
-    update_cache: yes
+  tasks:
+    - name: Update apt cache and install required packages
+      apt:
+        name:
+          - nodejs
+          - git
+        state: present
+        update_cache: yes
 
     - name: Clone the application repository from GitHub
       git:
@@ -35,16 +33,8 @@
         global: yes
         state: present
 
-    - name: Reload the application with PM2 to ensure it is running
-      command: pm2 reload "stripe-app"
-      args:
-        chdir: /home/ubuntu/AWS-Session
-      environment:
-        NODE_ENV: production
-      ignore_errors: yes
-
-    - name: Start the application directly with node
-      command: pm2 start server.js --name "stripe-app"
+    - name: Start or Reload the application with PM2
+      command: pm2 startOrReload server.js --name "stripe-app"
       args:
         chdir: /home/ubuntu/AWS-Session
       environment:
