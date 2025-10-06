@@ -28,7 +28,8 @@ jobs:
 
       - name: Deploy Application using SSH
         run: |
-          APP_SERVER_IP=$(terraform output -raw public_ip)
+          # This corrected line reliably extracts ONLY the IP address
+          APP_SERVER_IP=$(terraform output -raw public_ip | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b")
           echo "Deploying to server: $APP_SERVER_IP"
 
           echo "${{ secrets.ANSIBLE_SSH_KEY }}" > private_key.pem
