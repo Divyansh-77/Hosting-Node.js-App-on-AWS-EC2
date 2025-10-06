@@ -6,15 +6,13 @@
   vars_files:
     - secrets.yml
 
-  tasks:
-    - name: Update apt cache and install required packages
-      apt:
-        name:
-          - nodejs
-          - npm
-          - git
-        state: present
-        update_cache: yes
+- name: Update apt cache and install required packages
+  apt:
+    name:
+      - nodejs  # This will automatically install npm
+      - git
+    state: present
+    update_cache: yes
 
     - name: Clone the application repository from GitHub
       git:
