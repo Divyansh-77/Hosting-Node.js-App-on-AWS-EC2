@@ -1,0 +1,56 @@
+name: Main CI/CD Pipeline for AWS Deployment
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Apply
+        id: terraform
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Setup Ansible and Deploy
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: false
+        run: |
+          # Create the SSH key file from the GitHub secret
+          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ansible-key.pem
+          chmod 400 ansible-key.pem
+
+          # Create the secrets.yml file for Ansible
+          echo "stripe_publishable_key: ${{ secrets.STRIPE_PK }}" > secrets.yml
+          echo "stripe_secret_key: ${{ secrets.STRIPE_SK }}" >> secrets.yml
+
+          # Get IP addresses from Terraform output
+          APP_SERVER_IP=$(terraform output -raw public_ip)
+          JENKINS_SERVER_IP=$(terraform output -raw jenkins_server_ip)
+
+          # Create the Ansible inventory file
+          echo "[webserver]" > inventory_github
+          echo "$APP_SERVER_IP ansible_user=ubuntu ansible_ssh_private_key_file=./ansible-key.pem" >> inventory_github
+          echo "" >> inventory_github
+          echo "[jenkins-server]" >> inventory_github
+          echo "$JENKINS_SERVER_IP ansible_user=ubuntu ansible_ssh_private_key_file=./ansible-key.pem" >> inventory_github
+
+          # Run Ansible Playbooks
+          ansible-playbook -i inventory_github install-jenkins.yml
+          ansible-playbook -i inventory_github playbook.yml
