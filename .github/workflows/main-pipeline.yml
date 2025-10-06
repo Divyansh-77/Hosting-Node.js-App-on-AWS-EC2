@@ -27,24 +27,26 @@ jobs:
           terraform init
           terraform apply -auto-approve
 
+      # --- THIS IS THE NEW STEP ---
+      - name: Wait for SSH to be ready
+        run: |
+          echo "Waiting for 60 seconds for the server to boot up..."
+          sleep 60
+      # ---------------------------
+
       - name: Setup Ansible and Deploy
         env:
           ANSIBLE_HOST_KEY_CHECKING: false
         run: |
-          echo "--- Preparing for Ansible Deployment ---"
           echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ansible-key.pem
           chmod 400 ansible-key.pem
 
           echo "stripe_publishable_key: ${{ secrets.STRIPE_PK }}" > secrets.yml
           echo "stripe_secret_key: ${{ secrets.STRIPE_SK }}" >> secrets.yml
-          
-          # This corrected line reliably extracts ONLY the IP address
+
           APP_SERVER_IP=$(terraform output -raw public_ip | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b")
-          
-          echo "Discovered App Server IP: $APP_SERVER_IP"
 
           echo "[webserver]" > inventory_github
           echo "$APP_SERVER_IP ansible_user=ubuntu ansible_ssh_private_key_file=./ansible-key.pem" >> inventory_github
-          
-          echo "--- Running Ansible Playbook ---"
+
           ansible-playbook -i inventory_github playbook.yml
