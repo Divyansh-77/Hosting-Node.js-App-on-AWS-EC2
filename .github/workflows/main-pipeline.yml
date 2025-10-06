@@ -1,13 +1,12 @@
-name: Deploy Stripe App to AWS
+name: Deploy Stripe App to AWS (Simple)
 
 on:
   push:
     branches: [ "main" ]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -27,26 +26,23 @@ jobs:
           terraform init
           terraform apply -auto-approve
 
-      # --- THIS IS THE NEW STEP ---
-      - name: Wait for SSH to be ready
+      - name: Deploy Application using SSH
         run: |
-          echo "Waiting for 60 seconds for the server to boot up..."
-          sleep 60
-      # ---------------------------
+          APP_SERVER_IP=$(terraform output -raw public_ip)
+          echo "Deploying to server: $APP_SERVER_IP"
 
-      - name: Setup Ansible and Deploy
-        env:
-          ANSIBLE_HOST_KEY_CHECKING: false
-        run: |
-          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ansible-key.pem
-          chmod 400 ansible-key.pem
+          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > private_key.pem
+          chmod 400 private_key.pem
 
-          echo "stripe_publishable_key: ${{ secrets.STRIPE_PK }}" > secrets.yml
-          echo "stripe_secret_key: ${{ secrets.STRIPE_SK }}" >> secrets.yml
-
-          APP_SERVER_IP=$(terraform output -raw public_ip | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b")
-
-          echo "[webserver]" > inventory_github
-          echo "$APP_SERVER_IP ansible_user=ubuntu ansible_ssh_private_key_file=./ansible-key.pem" >> inventory_github
-
-          ansible-playbook -i inventory_github playbook.yml
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@$APP_SERVER_IP 'bash -s' <<'EOF'
+            # These commands are now running on the remote server
+            sudo apt-get update -y
+            sudo apt-get install -y nodejs npm git
+            git clone https://github.com/verma-kunal/AWS-Session.git
+            cd AWS-Session
+            echo "PUBLISHABLE_KEY=${{ secrets.STRIPE_PK }}" > .env
+            echo "SECRET_KEY=${{ secrets.STRIPE_SK }}" >> .env
+            npm install
+            sudo npm install pm2 -g
+            pm2 startOrReload server.js --name "stripe-app"
+          EOF
