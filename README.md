@@ -85,6 +85,7 @@ This project is deployed using Infrastructure as Code and Configuration Manageme
     The application will be available at `http://localhost:3000`.
 ---
 *Update: Testing the Jenkins CI/CD pipeline!*
+*Triggering a new pipeline run on a clean account.*
 ---
 
 ### 📚 Project Evolution: From Manual to Automated
