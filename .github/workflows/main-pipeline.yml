@@ -1,4 +1,4 @@
-name: Deploy Stripe App to AWS (Simple)
+name: Deploy Stripe App to AWS (Final)
 
 on:
   push:
@@ -26,48 +26,43 @@ jobs:
           terraform init
           terraform apply -auto-approve
 
-      # --- THIS IS THE NEW, IMPORTANT STEP ---
-      - name: Wait for Server to be Ready
+      - name: Deploy Application via SSH
         run: |
-          echo "Waiting for 60 seconds for the server to fully boot up..."
-          sleep 60
-      # ------------------------------------
-
-      - name: Deploy Application using SSH
-        run: |
+          # Extract the IP address reliably
           APP_SERVER_IP=$(terraform output -raw public_ip | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b")
-          echo "Deploying to server: $APP_SERVER_IP"
+          echo "Server IP is $APP_SERVER_IP"
 
+          # Create the SSH key file
           echo "${{ secrets.ANSIBLE_SSH_KEY }}" > private_key.pem
           chmod 400 private_key.pem
 
-          ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@$APP_SERVER_IP 'bash -s' <<'EOF'
-            # These commands are now running on the remote server
-            sudo apt-get update -y
-            sudo apt-get install -y nodejs npm git
-            git clone https://github.com/verma-kunal/AWS-Session.git
-            cd AWS-Session
-            echo "PUBLISHABLE_KEY=${{ secrets.STRIPE_PK }}" > .env
-            echo "SECRET_KEY=${{ secrets.STRIPE_SK }}" >> .env
-            npm install
-            sudo npm install pm2 -g
-            pm2 startOrReload server.js --name "stripe-app"
-          EOF
-          APP_SERVER_IP=$(terraform output -raw public_ip | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b")
-          echo "Deploying to server: $APP_SERVER_IP"
+          # Create a deployment script file
+          cat > deploy_script.sh <<EOF
+          #!/bin/bash
+          set -e
 
-          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > private_key.pem
-          chmod 400 private_key.pem
+          # Update and install dependencies
+          sudo apt-get update -y
+          sudo apt-get install -y nodejs npm git
 
-          ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@$APP_SERVER_IP 'bash -s' <<'EOF'
-            # These commands are now running on the remote server
-            sudo apt-get update -y
-            sudo apt-get install -y nodejs npm git
-            git clone https://github.com/verma-kunal/AWS-Session.git
-            cd AWS-Session
-            echo "PUBLISHABLE_KEY=${{ secrets.STRIPE_PK }}" > .env
-            echo "SECRET_KEY=${{ secrets.STRIPE_SK }}" >> .env
-            npm install
-            sudo npm install pm2 -g
-            pm2 startOrReload server.js --name "stripe-app"
+          # Clone the repository
+          git clone https://github.com/verma-kunal/AWS-Session.git
+          cd AWS-Session
+
+          # Create .env file with secrets
+          echo "PUBLISHABLE_KEY=${{ secrets.STRIPE_PK }}" > .env
+          echo "SECRET_KEY=${{ secrets.STRIPE_SK }}" >> .env
+
+          # Install app dependencies and PM2
+          npm install
+          sudo npm install pm2 -g
+
+          # Start the app with PM2
+          pm2 startOrReload server.js --name "stripe-app"
           EOF
+
+          # Copy the script to the new server
+          scp -o StrictHostKeyChecking=no -i private_key.pem ./deploy_script.sh ubuntu@$APP_SERVER_IP:/home/ubuntu/
+
+          # Execute the script on the new server
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@$APP_SERVER_IP "chmod +x /home/ubuntu/deploy_script.sh && /home/ubuntu/deploy_script.sh"
