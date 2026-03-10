@@ -35,7 +35,7 @@ You can view the live application here: **[http://44.210.26.165:3000](http://44.
 
 This project is deployed using Infrastructure as Code and Configuration Management. No manual clicking in the AWS Console is required.
 
-#### Prerequisites
+##### Prerequisites
 * Terraform installed
 * Ansible installed
 * AWS account and credentials configured locally
